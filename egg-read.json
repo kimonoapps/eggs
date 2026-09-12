@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": "https://raw.githubusercontent.com/kimonoapps/eggs/main/egg-read.json"
+  },
+  "exported_at": "2026-09-12T00:00:00+00:00",
+  "name": "Read",
+  "author": "akramboussanni@users.noreply.github.com",
+  "description": "Read deployment: see infra/pelican/README.md for image build and database setup.",
+  "features": [],
+  "docker_images": {
+    "Read": "ghcr.io/akramboussanni/read-pelican:latest"
+  },
+  "file_denylist": [],
+  "startup": "/usr/local/bin/read-pelican",
+  "config": {
+    "files": "{}",
+    "logs": "{}",
+    "startup": "{\"done\": \"Ready in\"}",
+    "stop": "^C"
+  },
+  "scripts": {
+    "installation": {
+      "container": "alpine:3.22",
+      "entrypoint": "sh",
+      "script": "#!/bin/sh\nset -eu\nmkdir -p /mnt/server\necho \"Runtime is supplied by the custom Docker image.\"\n"
+    }
+  },
+  "variables": [
+    {
+      "name": "AUTH_URL",
+      "description": "Public HTTPS URL",
+      "env_variable": "AUTH_URL",
+      "default_value": "https://read.example.org",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "DATABASE_URL",
+      "description": "postgres://read:PASSWORD@REACHABLE_HOST:ALLOCATED_PORT/read",
+      "env_variable": "DATABASE_URL",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AUTH_SECRET",
+      "description": "Generate with openssl rand -hex 32",
+      "env_variable": "AUTH_SECRET",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AUTH_AUTHENTIK_ID",
+      "description": "",
+      "env_variable": "AUTH_AUTHENTIK_ID",
+      "default_value": "read",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AUTH_AUTHENTIK_SECRET",
+      "description": "Same client secret as the Authentik provider",
+      "env_variable": "AUTH_AUTHENTIK_SECRET",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AUTH_AUTHENTIK_ISSUER",
+      "description": "",
+      "env_variable": "AUTH_AUTHENTIK_ISSUER",
+      "default_value": "https://auth.example.org/application/o/read/",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AUTH_TEACHER_GROUP",
+      "description": "",
+      "env_variable": "AUTH_TEACHER_GROUP",
+      "default_value": "read-teachers",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "OPENROUTER_API_KEY",
+      "description": "Optional AI API key",
+      "env_variable": "OPENROUTER_API_KEY",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "OPENROUTER_MODEL",
+      "description": "",
+      "env_variable": "OPENROUTER_MODEL",
+      "default_value": "google/gemini-2.5-flash-lite",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    }
+  ]
+}

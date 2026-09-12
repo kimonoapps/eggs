@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": "https://raw.githubusercontent.com/kimonoapps/eggs/main/egg-authentik.json"
+  },
+  "exported_at": "2026-09-12T00:00:00+00:00",
+  "name": "Authentik (server + worker)",
+  "author": "akramboussanni@users.noreply.github.com",
+  "description": "Read deployment: see infra/pelican/README.md for image build and database setup.",
+  "features": [],
+  "docker_images": {
+    "Authentik (server + worker)": "ghcr.io/akramboussanni/authentik-pelican:2026.5.6"
+  },
+  "file_denylist": [],
+  "startup": "/usr/local/bin/authentik-pelican",
+  "config": {
+    "files": "{}",
+    "logs": "{}",
+    "startup": "{\"done\": \"Starting authentik server and worker\"}",
+    "stop": "^C"
+  },
+  "scripts": {
+    "installation": {
+      "container": "alpine:3.22",
+      "entrypoint": "sh",
+      "script": "#!/bin/sh\nset -eu\nmkdir -p /mnt/server\necho \"Runtime is supplied by the custom Docker image.\"\n"
+    }
+  },
+  "variables": [
+    {
+      "name": "AUTHENTIK_POSTGRESQL__HOST",
+      "description": "Reachable PostgreSQL VM IP / hostname",
+      "env_variable": "AUTHENTIK_POSTGRESQL__HOST",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AUTHENTIK_POSTGRESQL__PORT",
+      "description": "PostgreSQL allocated port",
+      "env_variable": "AUTHENTIK_POSTGRESQL__PORT",
+      "default_value": "5432",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AUTHENTIK_POSTGRESQL__NAME",
+      "description": "",
+      "env_variable": "AUTHENTIK_POSTGRESQL__NAME",
+      "default_value": "authentik",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AUTHENTIK_POSTGRESQL__USER",
+      "description": "",
+      "env_variable": "AUTHENTIK_POSTGRESQL__USER",
+      "default_value": "authentik",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AUTHENTIK_POSTGRESQL__PASSWORD",
+      "description": "Database password",
+      "env_variable": "AUTHENTIK_POSTGRESQL__PASSWORD",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AUTHENTIK_SECRET_KEY",
+      "description": "Generate once with openssl rand -hex 32; retain on updates",
+      "env_variable": "AUTHENTIK_SECRET_KEY",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AUTHENTIK_BOOTSTRAP_PASSWORD",
+      "description": "Initial akadmin password; first boot only",
+      "env_variable": "AUTHENTIK_BOOTSTRAP_PASSWORD",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AUTHENTIK_BOOTSTRAP_EMAIL",
+      "description": "",
+      "env_variable": "AUTHENTIK_BOOTSTRAP_EMAIL",
+      "default_value": "admin@example.org",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    }
+  ]
+}
