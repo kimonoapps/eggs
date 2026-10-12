@@ -32,7 +32,7 @@ app_pid=$!
 pids=("$app_pid")
 if [[ -n "${TUNNEL_TOKEN:-}" ]]; then
     # cloudflared reads TUNNEL_TOKEN directly; never put it in CLI arguments.
-    env -u RAILS_MASTER_KEY -u ADMIN_PASSWORD cloudflared tunnel --no-autoupdate run &
+    env -u SECRET_KEY_BASE -u ADMIN_PASSWORD cloudflared tunnel --no-autoupdate run &
     tunnel_pid=$!
     pids+=("$tunnel_pid")
 else
