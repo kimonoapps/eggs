@@ -1,0 +1,30 @@
+# Pelican yolk for Shawarma Sinbad. Wraps the published app image, so build
+# with this folder as context; no changes to the Sinbad repository are needed.
+ARG CLOUDFLARED_IMAGE=cloudflare/cloudflared:2026.9.3
+FROM ${CLOUDFLARED_IMAGE} AS tunnel
+FROM ghcr.io/mom0oo0/shawarmasinbad:main AS app
+
+FROM app
+USER root
+RUN apt-get update -qq \
+    && apt-get install --no-install-recommends -y tini \
+    && rm -rf /var/lib/apt/lists /var/cache/apt/archives \
+    && useradd -d /home/container -m -s /bin/bash container
+COPY --from=tunnel /usr/local/bin/cloudflared /usr/local/bin/cloudflared
+# Everything Rails writes lives in the Pelican volume. Wings runs the container
+# as its own UID, so the image itself must not need to be writable.
+RUN rm -rf /rails/storage /rails/log /rails/tmp \
+    && ln -s /home/container/storage /rails/storage \
+    && ln -s /home/container/log /rails/log \
+    && ln -s /home/container/tmp /rails/tmp \
+    && chmod -R a+rX /rails
+COPY entrypoint.sh /entrypoint.sh
+COPY start-sinbad.sh /usr/local/bin/start-sinbad
+RUN chmod 755 /entrypoint.sh /usr/local/bin/start-sinbad
+ENV RAILS_ENV=production RAILS_LOG_TO_STDOUT=1 \
+    USER=container HOME=/home/container
+USER container
+WORKDIR /home/container
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
+CMD ["/usr/local/bin/start-sinbad"]
