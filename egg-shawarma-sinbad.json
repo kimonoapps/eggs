@@ -1,0 +1,62 @@
+{
+  "_comment": "Import into Pelican Panel. Image: ghcr.io/akramboussanni/shawarma-sinbad:pelican.",
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": "https://raw.githubusercontent.com/kimonoapps/eggs/main/egg-shawarma-sinbad.json"
+  },
+  "exported_at": "2026-10-12T00:00:00+00:00",
+  "name": "Shawarma Sinbad",
+  "author": "akramboussanni@users.noreply.github.com",
+  "description": "Shawarma Sinbad Rails app with optional token-authenticated Cloudflare Tunnel. Databases and uploads live in /home/container/storage. With a tunnel, set its public hostname service to http://localhost:3000; no allocation is needed.",
+  "features": [],
+  "docker_images": {
+    "Shawarma Sinbad": "ghcr.io/akramboussanni/shawarma-sinbad:pelican"
+  },
+  "file_denylist": [],
+  "startup": "/usr/local/bin/start-sinbad",
+  "config": {
+    "files": "{}",
+    "logs": "{}",
+    "startup": "{\"done\": \"Listening on\"}",
+    "stop": "^C"
+  },
+  "scripts": {
+    "installation": {
+      "container": "alpine:3.22",
+      "entrypoint": "sh",
+      "script": "#!/bin/sh\nset -eu\nmkdir -p /mnt/server/storage /mnt/server/log /mnt/server/tmp\necho \"Application is bundled in the yolk; no download required.\"\n"
+    }
+  },
+  "variables": [
+    {
+      "name": "Rails master key",
+      "description": "Contents of config/master.key. Decrypts the app's production credentials.",
+      "env_variable": "RAILS_MASTER_KEY",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Admin password",
+      "description": "Password for the admin area. Choose a strong unique password.",
+      "env_variable": "ADMIN_PASSWORD",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "required|string|min:12",
+      "field_type": "text"
+    },
+    {
+      "name": "Cloudflare Tunnel token",
+      "description": "Token from a remotely managed Cloudflare Tunnel. Set its public hostname service to http://localhost:3000. Empty disables the tunnel and serves the app on the allocation port instead, which then requires an allocation.",
+      "env_variable": "TUNNEL_TOKEN",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "nullable|string",
+      "field_type": "text"
+    }
+  ]
+}
