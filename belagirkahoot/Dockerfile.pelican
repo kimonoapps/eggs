@@ -1,0 +1,56 @@
+# syntax=docker/dockerfile:1.7
+# Pelican yolk for Jeunesse Bel Agir (belagirkahoot). Builds the app straight
+# from its GitHub repository, so build with this folder as context; the app
+# repository needs no changes. One container runs the Go backend, the built
+# frontend behind Caddy, a private Redis and, optionally, cloudflared.
+ARG CLOUDFLARED_IMAGE=cloudflare/cloudflared:2026.9.3
+ARG BELAGIR_REPO=https://github.com/akramboussanni/belagirkahoot.git
+ARG BELAGIR_REF=main
+
+FROM ${CLOUDFLARED_IMAGE} AS tunnel
+
+FROM alpine:3.22 AS source
+ARG BELAGIR_REPO
+ARG BELAGIR_REF
+ADD ${BELAGIR_REPO}#${BELAGIR_REF} /src
+
+FROM golang:1.25-alpine AS backend
+WORKDIR /src/backend
+COPY --from=source /src/backend/go.mod /src/backend/go.sum ./
+RUN go mod download
+COPY --from=source /src/backend/ ./
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/server ./cmd/server
+
+FROM node:23-alpine AS frontend
+WORKDIR /src/frontend
+RUN corepack enable
+COPY --from=source /src/frontend/package.json /src/frontend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY --from=source /src/frontend/ ./
+# The WebSocket origin is baked into the bundle at build time. A placeholder is
+# baked instead and replaced with PUBLIC_URL on every start, so one image
+# serves any hostname.
+ENV VITE_WS_BASE_URL=__BELAGIR_WS_BASE__ \
+    VITE_APP_NAME="Jeunesse Bel Agir"
+RUN pnpm build
+
+FROM alpine:3.22
+RUN apk add --no-cache bash tini caddy redis ca-certificates tzdata \
+    && adduser -D -h /home/container -s /bin/bash container
+COPY --from=tunnel /usr/local/bin/cloudflared /usr/local/bin/cloudflared
+COPY --from=backend /out/server /opt/belagir/server
+COPY --from=source /src/backend/migrations /opt/belagir/migrations
+COPY --from=frontend /src/frontend/dist /opt/belagir/web
+COPY Caddyfile /etc/belagir/Caddyfile
+COPY entrypoint.sh /entrypoint.sh
+COPY start-belagir.sh /usr/local/bin/start-belagir
+# Wings runs the container as its own UID, so the image must not need to be
+# writable; everything written at runtime goes to /home/container or /tmp.
+RUN chmod -R a+rX /opt/belagir /etc/belagir \
+    && chmod 755 /entrypoint.sh /usr/local/bin/start-belagir
+ENV USER=container HOME=/home/container
+USER container
+WORKDIR /home/container
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["/sbin/tini", "--", "/entrypoint.sh"]
+CMD ["/usr/local/bin/start-belagir"]
