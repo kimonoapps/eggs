@@ -1,0 +1,172 @@
+{
+  "_comment": "Import into Pelican Panel. Image: ghcr.io/akramboussanni/belagirkahoot:pelican.",
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": "https://raw.githubusercontent.com/kimonoapps/eggs/main/egg-belagirkahoot.json"
+  },
+  "exported_at": "2026-11-05T00:00:00+00:00",
+  "name": "Jeunesse Bel Agir (Kahoot)",
+  "author": "akramboussanni@users.noreply.github.com",
+  "description": "Jeunesse Bel Agir live quiz game (belagirkahoot) with optional token-authenticated Cloudflare Tunnel. Uses an external PostgreSQL server; Redis runs inside the container unless REDIS_URL is set. With a tunnel, set its public hostname service to http://localhost:8080; no allocation is needed.",
+  "features": [],
+  "docker_images": {
+    "Jeunesse Bel Agir": "ghcr.io/akramboussanni/belagirkahoot:pelican"
+  },
+  "file_denylist": [],
+  "startup": "/usr/local/bin/start-belagir",
+  "config": {
+    "files": "{}",
+    "logs": "{}",
+    "startup": "{\"done\": \"server listening on\"}",
+    "stop": "^C"
+  },
+  "scripts": {
+    "installation": {
+      "container": "alpine:3.22",
+      "entrypoint": "sh",
+      "script": "#!/bin/sh\nset -eu\nmkdir -p /mnt/server/redis\necho \"Application is bundled in the yolk; no download required.\"\n"
+    }
+  },
+  "variables": [
+    {
+      "name": "Public URL",
+      "description": "Address players open, with no trailing slash, e.g. https://kahoot.example.org. Must match exactly: it is the only origin allowed to open game WebSockets, and email links use it.",
+      "env_variable": "PUBLIC_URL",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": false,
+      "rules": "required|url",
+      "field_type": "text"
+    },
+    {
+      "name": "Database URL",
+      "description": "postgres://USER:URL_ENCODED_PASSWORD@PRIVATE_VM_IP:PG_ALLOCATION_PORT/DB?sslmode=disable for the PostgreSQL server. Migrations run on every start.",
+      "env_variable": "DATABASE_URL",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "required|string|starts_with:postgres://,postgresql://",
+      "field_type": "text"
+    },
+    {
+      "name": "JWT secret",
+      "description": "Signs host sessions. Leave empty to generate one on first start, kept in .jwt-secret. Changing it signs everyone out.",
+      "env_variable": "JWT_SECRET",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "nullable|string|min:32",
+      "field_type": "text"
+    },
+    {
+      "name": "Cloudflare Tunnel token",
+      "description": "Token from a remotely managed Cloudflare Tunnel. Set its public hostname service to http://localhost:8080. Empty disables the tunnel and serves the app on the allocation port instead, which then requires an allocation.",
+      "env_variable": "TUNNEL_TOKEN",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Redis URL",
+      "description": "External redis:// or rediss:// URL. Empty runs a private Redis inside the container, which is enough for one server.",
+      "env_variable": "REDIS_URL",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "nullable|string|starts_with:redis://,rediss://",
+      "field_type": "text"
+    },
+    {
+      "name": "App name",
+      "description": "Name used in emails.",
+      "env_variable": "VITE_APP_NAME",
+      "default_value": "Jeunesse Bel Agir",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|max:64",
+      "field_type": "text"
+    },
+    {
+      "name": "SMTP host",
+      "description": "Mail server for verification and password reset emails. Hosts cannot log in until they verify their email.",
+      "env_variable": "SMTP_HOST",
+      "default_value": "smtp.gmail.com",
+      "user_viewable": true,
+      "user_editable": false,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "SMTP port",
+      "description": "Usually 587.",
+      "env_variable": "SMTP_PORT",
+      "default_value": "587",
+      "user_viewable": true,
+      "user_editable": false,
+      "rules": "nullable|integer|between:1,65535",
+      "field_type": "text"
+    },
+    {
+      "name": "SMTP user",
+      "description": "Login for the mail server.",
+      "env_variable": "SMTP_USER",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "SMTP password",
+      "description": "Password or app password for the mail server.",
+      "env_variable": "SMTP_PASS",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "SMTP from",
+      "description": "Sender address for emails.",
+      "env_variable": "SMTP_FROM",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": false,
+      "rules": "nullable|email",
+      "field_type": "text"
+    },
+    {
+      "name": "Anthropic API key",
+      "description": "Optional. Enables AI quiz generation.",
+      "env_variable": "ANTHROPIC_API_KEY",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Gemini API key",
+      "description": "Optional. Enables AI quiz generation, or serves as fallback.",
+      "env_variable": "GEMINI_API_KEY",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "AI generations per hour",
+      "description": "Per-host limit on AI quiz generations.",
+      "env_variable": "AI_RATE_LIMIT_PER_HOUR",
+      "default_value": "5",
+      "user_viewable": true,
+      "user_editable": false,
+      "rules": "required|integer|min:1",
+      "field_type": "text"
+    }
+  ]
+}

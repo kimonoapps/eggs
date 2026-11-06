@@ -1,0 +1,23 @@
+{
+	admin off
+	auto_https off
+	persist_config off
+}
+
+http://:{$WEB_PORT} {
+	bind {$WEB_BIND}
+	encode zstd gzip
+
+	# REST and WebSocket traffic; Caddy upgrades WebSockets on its own.
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8081 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		root * {$WEB_ROOT}
+		try_files {path} /index.html
+		file_server
+	}
+}
