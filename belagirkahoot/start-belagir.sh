@@ -28,8 +28,12 @@ base_env=(PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin HOME
 pids=()
 cleanup() {
     trap '' TERM INT
-    for pid in "${pids[@]}"; do kill -TERM "$pid" 2>/dev/null || true; done
-    for pid in "${pids[@]}"; do wait "$pid" 2>/dev/null || true; done
+    # Newest first, so the app closes its connections before PostgreSQL stops.
+    local i
+    for (( i=${#pids[@]}-1; i>=0; i-- )); do
+        kill -TERM "${pids[i]}" 2>/dev/null || true
+        wait "${pids[i]}" 2>/dev/null || true
+    done
 }
 trap cleanup EXIT
 trap 'exit 0' TERM INT
@@ -54,6 +58,38 @@ grep -rlF __BELAGIR_WS_BASE__ "$web_root" | while IFS= read -r file; do
     sed -i "s#__BELAGIR_WS_BASE__#${ws_base}#g" "$file"
 done
 
+database_url="${DATABASE_URL:-}"
+if [[ -z "$database_url" ]]; then
+    # A private PostgreSQL reachable only through a socket in a directory only
+    # this container's user can open, so it needs no password. Its files live
+    # in the server's files, which Pelican backups include.
+    pg_data=/home/container/postgres pg_socket=/tmp/belagir-pg
+    mkdir -p "$pg_socket" && chmod 700 "$pg_socket"
+    if [[ ! -s "$pg_data/PG_VERSION" ]]; then
+        echo "Creating the database in postgres/."
+        mkdir -p "$pg_data" && chmod 700 "$pg_data"
+        env -i "${base_env[@]}" initdb -D "$pg_data" -U belagir --auth=trust \
+            -E UTF8 --locale=C.UTF-8 >/dev/null
+    fi
+    env -i "${base_env[@]}" postgres -D "$pg_data" -c listen_addresses= \
+        -c unix_socket_directories="$pg_socket" -c log_checkpoints=off &
+    pids+=("$!")
+    ready=''
+    for _ in $(seq 1 150); do
+        pg_isready -q -h "$pg_socket" -U belagir -d postgres &&{ ready=1; break; }
+        sleep 0.2
+    done
+    if [[ -z "$ready" ]]; then
+        echo 'PostgreSQL did not start.' >&2
+        exit 1
+    fi
+    if ! psql -h "$pg_socket" -U belagir -d postgres -tAc \
+        "SELECT 1 FROM pg_database WHERE datname = 'belagir'" | grep -q 1; then
+        createdb -h "$pg_socket" -U belagir belagir
+    fi
+    database_url="postgres:///belagir?host=${pg_socket}&user=belagir&sslmode=disable"
+fi
+
 redis_url="${REDIS_URL:-}"
 if [[ -z "$redis_url" ]]; then
     # Live game state only; a private Redis on loopback is enough.
@@ -72,7 +108,7 @@ fi
 (
     cd /opt/belagir
     exec env -u TUNNEL_TOKEN -u STARTUP PORT=8081 FRONTEND_URL="$public_url" \
-        REDIS_URL="$redis_url" VITE_APP_NAME="${VITE_APP_NAME:-Jeunesse Bel Agir}" \
+        DATABASE_URL="$database_url" REDIS_URL="$redis_url" VITE_APP_NAME="${VITE_APP_NAME:-Jeunesse Bel Agir}" \
         ./server
 ) &
 pids+=("$!")

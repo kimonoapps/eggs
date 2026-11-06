@@ -7,7 +7,7 @@
   "exported_at": "2026-11-05T00:00:00+00:00",
   "name": "Jeunesse Bel Agir (Kahoot)",
   "author": "akramboussanni@users.noreply.github.com",
-  "description": "Jeunesse Bel Agir live quiz game (belagirkahoot) with optional token-authenticated Cloudflare Tunnel. Uses an external PostgreSQL server; Redis runs inside the container unless REDIS_URL is set. With a tunnel, set its public hostname service to http://localhost:8080; no allocation is needed.",
+  "description": "Jeunesse Bel Agir live quiz game (belagirkahoot) with optional token-authenticated Cloudflare Tunnel. PostgreSQL and Redis run inside the container, with data in /home/container, unless their URLs are set. With a tunnel, set its public hostname service to http://localhost:8080; no allocation is needed.",
   "features": [],
   "docker_images": {
     "Jeunesse Bel Agir": "ghcr.io/akramboussanni/belagirkahoot:pelican"
@@ -40,12 +40,12 @@
     },
     {
       "name": "Database URL",
-      "description": "postgres://USER:URL_ENCODED_PASSWORD@PRIVATE_VM_IP:PG_ALLOCATION_PORT/DB?sslmode=disable for the PostgreSQL server. Migrations run on every start.",
+      "description": "Leave empty to run PostgreSQL inside the container, with its data in postgres/. To use an external server instead: postgres://USER:URL_ENCODED_PASSWORD@HOST:PORT/DB?sslmode=disable.",
       "env_variable": "DATABASE_URL",
       "default_value": "",
       "user_viewable": false,
       "user_editable": false,
-      "rules": "required|string|starts_with:postgres://,postgresql://",
+      "rules": "nullable|string|starts_with:postgres://,postgresql://",
       "field_type": "text"
     },
     {

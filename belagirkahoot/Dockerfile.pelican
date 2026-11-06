@@ -2,7 +2,8 @@
 # Pelican yolk for Jeunesse Bel Agir (belagirkahoot). Builds the app straight
 # from its GitHub repository, so build with this folder as context; the app
 # repository needs no changes. One container runs the Go backend, the built
-# frontend behind Caddy, a private Redis and, optionally, cloudflared.
+# frontend behind Caddy, a private PostgreSQL and Redis and, optionally,
+# cloudflared.
 ARG CLOUDFLARED_IMAGE=cloudflare/cloudflared:2026.9.3
 ARG BELAGIR_REPO=https://github.com/akramboussanni/belagirkahoot.git
 ARG BELAGIR_REF=main
@@ -38,7 +39,7 @@ FROM alpine:3.22
 # Links the GHCR package to the app repository's Packages list.
 LABEL org.opencontainers.image.source=https://github.com/akramboussanni/belagirkahoot \
       org.opencontainers.image.description="Jeunesse Bel Agir for Pelican (Kimono Hosting)"
-RUN apk add --no-cache bash tini caddy redis ca-certificates tzdata \
+RUN apk add --no-cache bash tini caddy redis postgresql17 postgresql17-contrib ca-certificates tzdata \
     && adduser -D -h /home/container -s /bin/bash container
 COPY --from=tunnel /usr/local/bin/cloudflared /usr/local/bin/cloudflared
 COPY --from=backend /out/server /opt/belagir/server
@@ -50,6 +51,7 @@ COPY start-belagir.sh /usr/local/bin/start-belagir
 # Wings runs the container as its own UID, so the image must not need to be
 # writable; everything written at runtime goes to /home/container or /tmp.
 RUN chmod -R a+rX /opt/belagir /etc/belagir \
+    && chmod 666 /etc/passwd \
     && chmod 755 /entrypoint.sh /usr/local/bin/start-belagir
 ENV USER=container HOME=/home/container
 USER container
