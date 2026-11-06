@@ -35,6 +35,9 @@ ENV VITE_WS_BASE_URL=__BELAGIR_WS_BASE__ \
 RUN pnpm build
 
 FROM alpine:3.22
+# Links the GHCR package to the app repository's Packages list.
+LABEL org.opencontainers.image.source=https://github.com/akramboussanni/belagirkahoot \
+      org.opencontainers.image.description="Jeunesse Bel Agir for Pelican (Kimono Hosting)"
 RUN apk add --no-cache bash tini caddy redis ca-certificates tzdata \
     && adduser -D -h /home/container -s /bin/bash container
 COPY --from=tunnel /usr/local/bin/cloudflared /usr/local/bin/cloudflared
