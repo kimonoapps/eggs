@@ -1,18 +1,19 @@
 {
+  "_comment": "Import into Pelican Panel. Image: ghcr.io/akramboussanni/read-pelican:latest.",
   "meta": {
     "version": "PTDL_v2",
     "update_url": "https://raw.githubusercontent.com/kimonoapps/eggs/main/egg-read.json"
   },
-  "exported_at": "2026-09-12T00:00:00+00:00",
+  "exported_at": "2026-11-08T00:00:00+00:00",
   "name": "Read",
   "author": "akramboussanni@users.noreply.github.com",
-  "description": "Read deployment: see infra/pelican/README.md for image build and database setup.",
+  "description": "Read, the teacher-guided Arabic course, in one server. PostgreSQL runs inside the container with its data in /home/container unless DATABASE_URL is set. Starts in demo mode (shared demo student and teacher, no setup); switch READ_MODE to authentik for school accounts. With a Cloudflare Tunnel, set its public hostname service to http://localhost:8080; no allocation is needed.",
   "features": [],
   "docker_images": {
     "Read": "ghcr.io/akramboussanni/read-pelican:latest"
   },
   "file_denylist": [],
-  "startup": "/usr/local/bin/read-pelican",
+  "startup": "/usr/local/bin/start-read",
   "config": {
     "files": "{}",
     "logs": "{}",
@@ -23,83 +24,103 @@
     "installation": {
       "container": "alpine:3.22",
       "entrypoint": "sh",
-      "script": "#!/bin/sh\nset -eu\nmkdir -p /mnt/server\necho \"Runtime is supplied by the custom Docker image.\"\n"
+      "script": "#!/bin/sh\nset -eu\nmkdir -p /mnt/server\necho \"Application is bundled in the yolk; no download required.\"\n"
     }
   },
   "variables": [
     {
-      "name": "AUTH_URL",
-      "description": "Public HTTPS URL",
-      "env_variable": "AUTH_URL",
-      "default_value": "https://read.example.org",
+      "name": "Public URL",
+      "description": "Address people open, with no trailing slash, e.g. https://read.example.org. Sign-in links and redirects use it.",
+      "env_variable": "PUBLIC_URL",
+      "default_value": "",
       "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
+      "user_editable": false,
+      "rules": "required|url",
       "field_type": "text"
     },
     {
-      "name": "DATABASE_URL",
-      "description": "postgres://read:PASSWORD@REACHABLE_HOST:ALLOCATED_PORT/read",
+      "name": "Sign-in mode",
+      "description": "demo: two shared accounts (Yasmine, student; Mme Haddad, teacher) and a demo class with code DEMO01, reseeded on every start, no setup. authentik: school accounts through Authentik; fill the four Authentik fields below.",
+      "env_variable": "READ_MODE",
+      "default_value": "demo",
+      "user_viewable": true,
+      "user_editable": false,
+      "rules": "required|string|in:demo,authentik",
+      "field_type": "text"
+    },
+    {
+      "name": "Cloudflare Tunnel token",
+      "description": "Token from a remotely managed Cloudflare Tunnel. Set its public hostname service to http://localhost:8080. Empty disables the tunnel and serves Read on the allocation port instead, which then requires an allocation.",
+      "env_variable": "TUNNEL_TOKEN",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": false,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Database URL",
+      "description": "Leave empty to run PostgreSQL inside the container, with its data in postgres/. To use an external server instead: postgres://USER:URL_ENCODED_PASSWORD@HOST:PORT/DB.",
       "env_variable": "DATABASE_URL",
       "default_value": "",
       "user_viewable": false,
       "user_editable": false,
-      "rules": "required|string",
+      "rules": "nullable|string|starts_with:postgres://,postgresql://",
       "field_type": "text"
     },
     {
-      "name": "AUTH_SECRET",
-      "description": "Generate with openssl rand -hex 32",
+      "name": "Auth secret",
+      "description": "Signs sessions. Leave empty to generate one on first start, kept in .auth-secret. Changing it signs everyone out.",
       "env_variable": "AUTH_SECRET",
       "default_value": "",
       "user_viewable": false,
       "user_editable": false,
-      "rules": "required|string",
+      "rules": "nullable|string|min:32",
       "field_type": "text"
     },
     {
-      "name": "AUTH_AUTHENTIK_ID",
-      "description": "",
+      "name": "Authentik client ID",
+      "description": "authentik mode only. Client ID of the Read provider in Authentik.",
       "env_variable": "AUTH_AUTHENTIK_ID",
       "default_value": "read",
       "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
+      "user_editable": false,
+      "rules": "nullable|string",
       "field_type": "text"
     },
     {
-      "name": "AUTH_AUTHENTIK_SECRET",
-      "description": "Same client secret as the Authentik provider",
+      "name": "Authentik client secret",
+      "description": "authentik mode only. Client secret of the same provider.",
       "env_variable": "AUTH_AUTHENTIK_SECRET",
       "default_value": "",
       "user_viewable": false,
       "user_editable": false,
-      "rules": "required|string",
+      "rules": "nullable|string",
       "field_type": "text"
     },
     {
-      "name": "AUTH_AUTHENTIK_ISSUER",
-      "description": "",
+      "name": "Authentik issuer",
+      "description": "authentik mode only. Exact issuer from the provider's OpenID configuration, e.g. https://auth.example.org/application/o/read/.",
       "env_variable": "AUTH_AUTHENTIK_ISSUER",
-      "default_value": "https://auth.example.org/application/o/read/",
+      "default_value": "",
       "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
+      "user_editable": false,
+      "rules": "nullable|string",
       "field_type": "text"
     },
     {
-      "name": "AUTH_TEACHER_GROUP",
-      "description": "",
+      "name": "Teacher group",
+      "description": "authentik mode only. Authentik group whose members get the teacher role; everyone else is a student.",
       "env_variable": "AUTH_TEACHER_GROUP",
       "default_value": "read-teachers",
       "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
+      "user_editable": false,
+      "rules": "nullable|string",
       "field_type": "text"
     },
     {
-      "name": "OPENROUTER_API_KEY",
-      "description": "Optional AI API key",
+      "name": "OpenRouter API key",
+      "description": "Optional. Enables fresh review sentences, the daily story and open-answer grading. Without it Read uses reviewed content only.",
       "env_variable": "OPENROUTER_API_KEY",
       "default_value": "",
       "user_viewable": false,
@@ -108,12 +129,12 @@
       "field_type": "text"
     },
     {
-      "name": "OPENROUTER_MODEL",
-      "description": "",
+      "name": "OpenRouter model",
+      "description": "Model used when the key is set.",
       "env_variable": "OPENROUTER_MODEL",
       "default_value": "google/gemini-2.5-flash-lite",
       "user_viewable": true,
-      "user_editable": true,
+      "user_editable": false,
       "rules": "required|string",
       "field_type": "text"
     }
